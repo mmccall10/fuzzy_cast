@@ -1,25 +1,25 @@
 # FuzzyCast
-*** Warning: work in progress ***
+**Warning: work in progress**
 
 FuzzyCast is a module to help compose introspective like queries across Ecto schema fields.
 
 FuzzyCast greatly reduces code needed to search across Ecto schema fields.
 
-** Long Way **
-```
+**Long Way**
+```elixir
 from(u in User,
       where: ilike(u.email, ^"%gmail%"),
       or_where: ilike(u.email, ^"%yahoo%"),
       or_where: ilike(u.email, ^"%bob%")
 ```
 
-** The FuzzyCast Way **
-```
+**The FuzzyCast Way**
+```elixir
 FuzzyCast.compose(User, ~w(gmail yahoo bob))
 ```
 
 `FuzzyCast.compose` simply returns an`Ecto.Query` for composition.
-```
+```elixir
 iex> FuzzyCast.compose(User, ~w(gmail yahoo bob)) |> Repo.all
 [
   %MyApp.User{
@@ -34,7 +34,7 @@ iex> from(u in User, select: [:id, :email]) |> FuzzyCast.compose("gmail") |> Rep
 
 Explicitly passing fields to be searched is optional.
 For example we migth to search for user who's email migh contain gmail or yahoo
-```
+```elixir
 FuzzyCast.compose(User, ["gmail", "yahoo"], fields: [:email])
 ```
 
