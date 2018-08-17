@@ -59,6 +59,14 @@ defmodule FuzzyCast do
     |> search_query()
   end
 
+  def compose(%FuzzyCast{search_query: search_query}) when not is_nil(search_query) do
+    search_query
+  end
+
+  def compose(%FuzzyCast{search_query: search_query} = fuzzycast) when is_nil(search_query) do
+    do_build(fuzzycast) |> search_query
+  end
+
   def build(schema, terms, opts \\ [])
 
   def build(%Ecto.Query{} = ecto_q, terms, opts) do
