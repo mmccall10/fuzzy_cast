@@ -101,7 +101,7 @@ defmodule FuzzyCast do
   defp gen_base_query(%FuzzyCast{schema: schema, base_query: base_query} = fuzzycast) do
     case base_query do
       nil -> %{fuzzycast | base_query: from(x in schema)}
-      _ -> FuzzyCast
+      _ -> fuzzycast
     end
   end
 
