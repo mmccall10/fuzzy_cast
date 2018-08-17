@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-config :fuzzy_cat, author: "Mike McCall"
+config :fuzzy_cast, author: "Mike McCall"
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:fuzzy_cat, :key)
+#     Application.get_env(:fuzzy_cast, :key)
 #
 # You can also configure a 3rd-party app:
 #

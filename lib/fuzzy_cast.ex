@@ -30,7 +30,7 @@ defmodule FuzzyCast do
             terms: []
 
   @doc """
-  `FuzzyCast.compose` simply returns an`Ecto.Query` for composition.
+  `FuzzyCast.compose` returns an`Ecto.Query` for composition.
   ```
   FuzzyCast.compose(User, ~w(gmail yahoo bob)) |> Repo.all
 
@@ -59,14 +59,6 @@ defmodule FuzzyCast do
     |> search_query()
   end
 
-  def compose(%FuzzyCast{search_query: search_query}) when not is_nil(search_query) do
-    search_query
-  end
-
-  def compose(%FuzzyCast{search_query: search_query} = FuzzyCast) when is_nil(search_query) do
-    do_build(FuzzyCast) |> search_query
-  end
-
   def build(schema, terms, opts \\ [])
 
   def build(%Ecto.Query{} = ecto_q, terms, opts) do
@@ -83,56 +75,49 @@ defmodule FuzzyCast do
     build(schema, [term], opts)
   end
 
-  defp base_fuzzy(schema, term, opts \\ {})
-
   defp base_fuzzy(schema, terms, opts) do
     %FuzzyCast{terms: terms, schema: schema, fields: opts[:fields], base_query: opts[:base_query]}
   end
 
-  defp do_build(%FuzzyCast{} = FuzzyCast) do
-    FuzzyCast
+  defp do_build(%FuzzyCast{} = fuzzycast) do
+    fuzzycast
     |> gen_base_query()
     |> query_fields()
     |> build_search_query()
-
-    # |> count_query()
-    # |> ordering_query()
-    # |> limit_offset_query()
-    # |> preload_assoc()
   end
 
-  def search_query(%__MODULE__{} = FuzzyCast) do
-    FuzzyCast.search_query()
+  def search_query(%__MODULE__{} = fuzzycast) do
+    fuzzycast.search_query
   end
 
-  defp gen_base_query(%FuzzyCast{schema: schema, base_query: base_query} = FuzzyCast) do
+  defp gen_base_query(%FuzzyCast{schema: schema, base_query: base_query} = fuzzycast) do
     case base_query do
-      nil -> %{FuzzyCast | base_query: from(x in schema)}
+      nil -> %{fuzzycast | base_query: from(x in schema)}
       _ -> FuzzyCast
     end
   end
 
-  defp query_fields(%FuzzyCast{terms: terms} = FuzzyCast) do
-    %{FuzzyCast | field_casts: Enum.flat_map(terms, &map_fields_to_term(&1, FuzzyCast))}
+  defp query_fields(%FuzzyCast{terms: terms} = fuzzycast) do
+    %{fuzzycast | field_casts: Enum.flat_map(terms, &map_fields_to_term(&1, fuzzycast))}
   end
 
-  defp map_fields_to_term(term, FuzzyCast) do
-    FuzzyCast
+  defp map_fields_to_term(term, fuzzycast) do
+    fuzzycast
     |> map_query_fields(to_string(term))
     |> Enum.reject(&(&1 == :error))
   end
 
-  defp map_query_fields(FuzzyCast, search_term) do
+  defp map_query_fields(fuzzycast, search_term) do
     fields =
-      case FuzzyCast.fields() do
-        nil -> FuzzyCast.schema().__schema__(:fields)
-        _ -> FuzzyCast.fields()
+      case fuzzycast.fields do
+        nil -> fuzzycast.schema.__schema__(:fields)
+        _ -> fuzzycast.fields
       end
 
     fields
     |> Enum.filter(&strip_protected/1)
     |> Enum.map(fn field ->
-      type = FuzzyCast.schema().__schema__(:type, field)
+      type = fuzzycast.schema.__schema__(:type, field)
 
       case type do
         nil ->
@@ -152,7 +137,7 @@ defmodule FuzzyCast do
     unless to_string(field) =~ "password", do: field
   end
 
-  defp build_search_query(%FuzzyCast{base_query: base_query, field_casts: fields} = FuzzyCast) do
+  defp build_search_query(%FuzzyCast{base_query: base_query, field_casts: fields} = fuzzycast) do
     query =
       case fields do
         [] ->
@@ -164,7 +149,7 @@ defmodule FuzzyCast do
           Enum.reduce(tail, where_query, &compose_or_where_query(&1, &2))
       end
 
-    %{FuzzyCast | search_query: query}
+    %{fuzzycast | search_query: query}
   end
 
   defp compose_where_query(field_item, query) do

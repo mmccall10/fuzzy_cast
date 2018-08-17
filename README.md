@@ -1,6 +1,6 @@
-# FuzzyCat
+# FuzzyCast
   *** Warning: work in progress ***
-  
+
   FuzzyCast is a module to help compose introspective like queries across Ecto schema fields.
 
   FuzzyCast greatly reduces code needed to search across Ecto schema fields.
@@ -51,17 +51,17 @@
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `fuzzy_cat` to your list of dependencies in `mix.exs`:
+by adding `fuzzy_cast` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:fuzzy_cat, "~> 0.1.0"}
+    {:fuzzy_cast, git: "https://github.com/pyramind10/fuzzy_cast.git"}
   ]
 end
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/fuzzy_cat](https://hexdocs.pm/fuzzy_cat).
+be found at [https://hexdocs.pm/fuzzy_cast](https://hexdocs.pm/fuzzy_cast).
 
