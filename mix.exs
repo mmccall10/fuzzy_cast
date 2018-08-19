@@ -8,13 +8,15 @@ defmodule FuzzyCast.MixProject do
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      description: description(),
+      package: package(),
       # Docs
       name: "FuzzyCast",
       source_url: "https://github.com/pyramind10/fuzzy_cast",
       docs: [
         main: "FuzzyCast",
         extras: ["README.md"]
-      ]
+      ],
     ]
   end
 
@@ -30,6 +32,17 @@ defmodule FuzzyCast.MixProject do
     [
       {:ecto, "~> 2.1"},
       {:ex_doc, "~> 0.18.0", only: :dev, runtime: false}
+    ]
+  end
+
+  defp description() do
+    "Composing introspective %like% queries for Ecto.Schema fields."
+  end
+
+  defp package() do
+    [
+      licenses: ["Apache 2.0"],
+      links: %{"GitHub" => "https://github.com/pyramind10/fuzzy_cast"}
     ]
   end
 end

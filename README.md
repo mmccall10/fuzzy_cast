@@ -1,16 +1,15 @@
 # FuzzyCast
 **Warning: work in progress**
 
-FuzzyCast is a module to help compose introspective like queries across Ecto schema fields.
-
-FuzzyCast greatly reduces code needed to search across Ecto schema fields.
+`FuzzyCast` is a module for composing introspective %like% queries for `Ecto.Schema` fields.
 
 **Long Way**
 ```elixir
 from(u in User,
       where: ilike(u.email, ^"%gmail%"),
       or_where: ilike(u.email, ^"%yahoo%"),
-      or_where: ilike(u.email, ^"%bob%")
+      or_where: ilike(u.email, ^"%bob%"),
+      ...
 ```
 
 **The FuzzyCast Way**
@@ -18,9 +17,59 @@ from(u in User,
 FuzzyCast.compose(User, ~w(gmail yahoo bob))
 ```
 
-`FuzzyCast.compose` simply returns an`Ecto.Query` for composition.
+`FuzzyCast` will cast the search values with the schema fields.
+
+#### Example
 ```elixir
-iex> FuzzyCast.compose(User, ~w(gmail yahoo bob)) |> Repo.all
+defmodule MyApp.Accounts.User do
+  use Ecto.Schema
+  ...
+  
+  schema "users" do
+    field(:email, :string)
+    field(:username, :string)
+    field(:password, :string)
+    field(:confirmed, :boolean, default: false)
+    field(:password_confirmation, :string, virtual: true)
+    timestamps()
+  end
+  ...
+end
+
+iex> FuzzyCast.compose(User, 1)
+#Ecto.Query<from u in MyApp.Accounts.User, where: u.id == ^1,
+ or_where: ilike(u.email, ^"%1%"), or_where: ilike(u.username, ^"%1%"),
+ or_where: u.confirmed == ^true>
+```
+Notice password fields were not returned, `FuzzyCast` will ignore fields that contain "password".
+
+If the search value cannot be cast using `Ecto.Type.cast` it will be ignored. 
+
+#### Example
+```elixir
+iex> FuzzyCast.compose(User, "gmail")
+#Ecto.Query<from u in MyApp.Accounts.User, where: ilike(u.email, ^"%gmail%"),
+ or_where: ilike(u.username, ^"%gmail%")>
+```
+Notice the string "gmail" only matched the type `:string` associted to the field email and username. Fuzzy cast will only search castable fields... hence **FuzzyCast** 
+
+To further demostrate, we can try to get all users with an email containing gmail and who are confirmed.
+
+#### Example
+```elixir
+iex> FuzzyCast.compose(User, ["gmail", true])
+#Ecto.Query<from u in MyApp.Accounts.User, where: ilike(u.email, ^"%gmail%"),
+ or_where: ilike(u.username, ^"%gmail%"), or_where: ilike(u.email, ^"%true%"),
+ or_where: ilike(u.username, ^"%true%"), or_where: u.confirmed == ^true>
+
+```
+Our query looks ok, but it looks like we are also looking for emails that match "%true%". Depending on the use case this might be acceptable, after all it is **fuzzy**. A lot of times we don't need and single results but rather multiple results we pick from. This works best when narrowing or debouncing queries.
+
+`FuzzyCast.compose` simply return and `Ecto.Query`. This means we can it can be composed like any other `Ecto.Query`.
+
+#### Example
+```elixir
+iex> from(u in User) |> FuzzyCast.compose(~w(gmail yahoo)) |> Repo.all
 [
   %MyApp.User{
     email: "bob@gmail.com",
@@ -28,40 +77,37 @@ iex> FuzzyCast.compose(User, ~w(gmail yahoo bob)) |> Repo.all
   }
   ...
 ]
-iex> from(u in User, select: [:id, :email]) |> FuzzyCast.compose("gmail") |> Repo.aggregate(:count, :id)
+iex> q = from(u in User, where: u.confirmed == true) |> FuzzyCast.compose(["gmail", "yahoo"])
+#Ecto.Query<from u in MyApp.Accounts.User, where: u.confirmed == true,
+ or_where: ilike(u.email, ^"%gmail%"), or_where: ilike(u.username, ^"%gmail%"),
+ or_where: ilike(u.email, ^"%yahoo%"), or_where: ilike(u.username, ^"%yahoo%")>
+iex> Repo.aggregate(q, :count, :id)
 500
 ```
 
-Explicitly passing fields to be searched is optional.
-For example we migth to search for user who's email migh contain gmail or yahoo
-```elixir
-FuzzyCast.compose(User, ["gmail", "yahoo"], fields: [:email])
-```
+Composing queries with `Ecto.Query` works, but we can also pipe multiple `FuzzyCast.compose` calls. 
 
-FuzzyCast simply returns an `Ecto.Query` but can also accept an `Ecto.Query`.
-This means we can pipe mulitple `FuzzyCast` calls.
-For example, We might want to look for the match of "m" across all fields, and match for emails that include gmail and yahoo.
-```
-from(u in User)
-|> FuzzyCast.compose(["gmail", "yahoo"], fields: [:email])
-|> FuzzyCast.compose("m")
-|> Repo.all
+We might want to look for a match of "mike" across all fields, and a match for emails that include "gmail" or "yahoo".
+
+```elixir 
+FuzzyCast.compose(User, ["gmail", "yahoo"], fields: [:email]) |> FuzzyCast.compose("mike")
+#Ecto.Query<from u in MyApp.Accounts.User, where: ilike(u.email, ^"%gmail%"),
+ or_where: ilike(u.email, ^"%yahoo%"), or_where: ilike(u.email, ^"%mike%"),
+ or_where: ilike(u.username, ^"%mike%")>
+
 ```
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `fuzzy_cast` to your list of dependencies in `mix.exs`:
+This package can be installed by adding `fuzzy_cast` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:fuzzy_cast, git: "https://github.com/pyramind10/fuzzy_cast.git"}
+    {:fuzzy_cast, "~> 0.1"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/fuzzy_cast](https://hexdocs.pm/fuzzy_cast).
+Up to date docs can be found at [https://hexdocs.pm/fuzzy_cast](https://hexdocs.pm/fuzzy_cast).
 
