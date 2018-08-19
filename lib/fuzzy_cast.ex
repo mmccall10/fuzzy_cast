@@ -1,7 +1,7 @@
 defmodule FuzzyCast do
   @moduledoc """
 
-  Compose fuzzy like `Ecto.Query`'s accross `Ecto` schema fields.
+  Composing introspective %like% queries for Ecto.Schema fields.
 
   ```
   FuzzyCast.compose(User, ~w(gmail yahoo bob))
@@ -152,9 +152,15 @@ defmodule FuzzyCast do
           base_query
 
         _ ->
-          [head | tail] = fields
-          where_query = compose_where_query(head, base_query)
-          Enum.reduce(tail, where_query, &compose_or_where_query(&1, &2))
+          case Enum.count(base_query.wheres) do
+            0 ->
+              [head | tail] = fields
+              where_query = compose_where_query(head, base_query)
+              Enum.reduce(tail, where_query, &compose_or_where_query(&1, &2))
+            _ ->
+              Enum.reduce(fields, base_query, &compose_or_where_query(&1, &2))
+          end
+
       end
 
     %{fuzzycast | search_query: query}
