@@ -1,5 +1,5 @@
 # FuzzyCast
-**Warning: work in progress**
+**Warning: Experimental work in progress**
 
 `FuzzyCast` is a module for composing introspective %like% queries for `Ecto.Schema` fields.
 
