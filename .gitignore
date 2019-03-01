@@ -23,3 +23,5 @@ erl_crash.dump
 fuzzy_cast-*.tar
 
 .DS_Store
+
+.elixir_ls

@@ -20,7 +20,7 @@ defmodule FuzzyCast do
   import Ecto.Query, warn: false
   alias __MODULE__
 
-  @enforce_keys [:schema, :terms]
+  # @enforce_keys [:schema, :terms]
 
   defstruct base_query: nil,
             fields: nil,
@@ -45,6 +45,7 @@ defmodule FuzzyCast do
   FuzzyCast.compose(User, ["gmail", "yahoo"], fields: [:email])
   ```
   """
+
   def compose(schema_or_query, terms, opts \\ [])
 
   def compose(%Ecto.Query{} = ecto_q, terms, opts) do
@@ -157,10 +158,10 @@ defmodule FuzzyCast do
               [head | tail] = fields
               where_query = compose_where_query(head, base_query)
               Enum.reduce(tail, where_query, &compose_or_where_query(&1, &2))
+
             _ ->
               Enum.reduce(fields, base_query, &compose_or_where_query(&1, &2))
           end
-
       end
 
     %{fuzzycast | search_query: query}
