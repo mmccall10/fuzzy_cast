@@ -56,7 +56,7 @@ defmodule FuzzyCastTest do
   end
 
   test "compose/1 returns %Ecto.Query" do
-    query = User |> FuzzyCast.build("mike") |> FuzzyCast.compose()
+    query = User |> FuzzyCast.build("bob", fields: [:name]) |> FuzzyCast.compose()
 
     assert [
              %Ecto.Query.BooleanExpr{
