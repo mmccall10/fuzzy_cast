@@ -23,7 +23,7 @@ defmodule FuzzyCast do
   # @enforce_keys [:schema, :terms]
 
   defstruct base_query: nil,
-            fields: nil,
+            fields: [],
             field_casts: [],
             schema: nil,
             search_query: nil,
@@ -49,54 +49,44 @@ defmodule FuzzyCast do
   def compose(schema_or_query, terms, opts \\ [])
 
   def compose(%Ecto.Query{} = ecto_q, terms, opts) do
-    {_table, schema} = ecto_q.from
+    %Ecto.Query.FromExpr{
+      source: {_, schema}
+    } = ecto_q.from
 
-    build(schema, terms, opts ++ [base_query: ecto_q])
-    |> search_query()
+    schema |> build(terms, opts ++ [base_query: ecto_q]) |> search_query()
   end
 
   def compose(schema, terms, opts) do
-    build(schema, terms, opts)
-    |> search_query()
+    schema |> build(terms, opts) |> search_query()
   end
 
-  def compose(%FuzzyCast{search_query: search_query}) when not is_nil(search_query) do
-    search_query
+  def compose(%FuzzyCast{} = fuzzycast) do
+    fuzzycast |> run_pipeline() |> search_query
   end
 
-  def compose(%FuzzyCast{search_query: search_query} = fuzzycast) when is_nil(search_query) do
-    do_build(fuzzycast) |> search_query
-  end
+  # def compose(%FuzzyCast{search_query: search_query}) when not is_nil(search_query) do
+  #   search_query
+  # end
 
   def build(schema, terms, opts \\ [])
 
-  def build(%Ecto.Query{} = ecto_q, terms, opts) do
-    {_table, schema} = ecto_q.from
-    build(schema, terms, opts ++ [base_query: ecto_q])
-  end
+  def build(schema, terms, opts) do
+    terms =
+      case terms do
+        terms when is_list(terms) -> terms
+        terms when not is_list(terms) -> [terms]
+        _ -> []
+      end
 
-  def build(schema, terms, opts) when is_list(terms) do
-    base_fuzzy(schema, terms, opts)
-    |> do_build()
-  end
-
-  def build(schema, term, opts) do
-    build(schema, [term], opts)
-  end
-
-  defp base_fuzzy(schema, terms, opts) do
     %FuzzyCast{terms: terms, schema: schema, fields: opts[:fields], base_query: opts[:base_query]}
+    |> run_pipeline()
   end
 
-  defp do_build(%FuzzyCast{} = fuzzycast) do
+  defp run_pipeline(%FuzzyCast{} = fuzzycast) do
     fuzzycast
     |> gen_base_query()
     |> query_fields()
     |> build_search_query()
-  end
-
-  def search_query(%__MODULE__{} = fuzzycast) do
-    fuzzycast.search_query
   end
 
   defp gen_base_query(%FuzzyCast{schema: schema, base_query: base_query} = fuzzycast) do
@@ -108,6 +98,10 @@ defmodule FuzzyCast do
 
   defp query_fields(%FuzzyCast{terms: terms} = fuzzycast) do
     %{fuzzycast | field_casts: Enum.flat_map(terms, &map_fields_to_term(&1, fuzzycast))}
+  end
+
+  def search_query(%FuzzyCast{} = fuzzycast) do
+    fuzzycast.search_query
   end
 
   defp map_fields_to_term(term, fuzzycast) do

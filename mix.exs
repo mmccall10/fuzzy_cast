@@ -8,6 +8,13 @@ defmodule FuzzyCast.MixProject do
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
       elixirc_paths: elixirc_paths(Mix.env()),
       description: description(),
       package: package(),
@@ -35,7 +42,9 @@ defmodule FuzzyCast.MixProject do
   defp deps do
     [
       {:ecto, "~> 3.0.0"},
-      {:ex_doc, "~> 0.18.0", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.18.0", only: :dev, runtime: false},
+      {:credo, "1.0.2", only: :dev, runtime: false},
+      {:excoveralls, "0.10.6", only: :test, runtime: false}
     ]
   end
 
